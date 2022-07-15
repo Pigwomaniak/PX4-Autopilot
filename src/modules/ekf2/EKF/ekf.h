@@ -382,6 +382,13 @@ private:
 		Quatf quat_change;	///< quaternion delta due to last reset - multiply pre-reset quaternion by this to get post-reset quaternion
 	} _state_reset_status{};	///< reset event monitoring structure containing velocity, position, height and yaw reset information
 
+	struct {
+		bool is_available;
+		bool is_data_ready;
+		float observation_down;
+		float observation_variance;
+	} _height_sensor_ref{};
+
 	Vector3f _ang_rate_delayed_raw{};	///< uncorrected angular rate vector at fusion time horizon (rad/sec)
 
 	stateSample _state{};		///< state struct of the ekf running at the delayed time horizon
@@ -676,6 +683,8 @@ private:
 	void resetHorizontalPositionToLastKnown();
 	void resetHorizontalPositionTo(const Vector2f &new_horz_pos);
 
+	bool isHeightResetRequired() const;
+
 	void resetVerticalPositionTo(float new_vert_pos);
 
 	void resetHeightToBaro();
@@ -890,9 +899,6 @@ private:
 	void runMagAndMagDeclFusions(const Vector3f &mag);
 	void run3DMagAndDeclFusions(const Vector3f &mag);
 
-	// control fusion of range finder observations
-	void controlRangeFinderFusion();
-
 	// control fusion of air data observations
 	void controlAirDataFusion();
 
@@ -901,9 +907,6 @@ private:
 
 	// control fusion of multi-rotor drag specific force observations
 	void controlDragFusion();
-
-	// control fusion of pressure altitude observations
-	void controlBaroFusion();
 
 	// control fusion of fake position observations to constrain drift
 	void controlFakePosFusion();
@@ -920,6 +923,10 @@ private:
 
 	// control for combined height fusion mode (implemented for switching between baro and range height)
 	void controlHeightFusion();
+	void controlBaroHeightFusion();
+	void controlGpsHeightFusion();
+	void controlRangeHeightFusion();
+	void controlEvHeightFusion();
 
 	// determine if flight condition is suitable to use range finder instead of the primary height sensor
 	void checkRangeAidSuitability();
@@ -943,8 +950,10 @@ private:
 	void stopGpsHgtFusion();
 
 	void startRngHgtFusion();
+	void stopRngHgtFusion();
 	void startRngAidHgtFusion();
 	void startEvHgtFusion();
+	void stopEvHgtFusion();
 
 	void updateBaroHgtBias();
 
