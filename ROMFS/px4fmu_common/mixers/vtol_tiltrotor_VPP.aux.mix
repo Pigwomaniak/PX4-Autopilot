@@ -1,0 +1,17 @@
+# Tiltrotor VTOL mixer AUX
+
+# Tilt Right
+M: 1
+S: 1 8      0 20000  10000 -10000  10000
+
+# Tilt Left
+M: 1
+S: 1 8      0 20000  10000 -10000  10000
+
+# Pitch Right Passthrough
+M: 1
+S: 3 5  10000  10000      0 -10000  10000
+
+# Pitch Left Passthrough
+M: 1
+S: 3 6  10000  10000      0 -10000  10000

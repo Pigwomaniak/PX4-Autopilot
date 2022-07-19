@@ -1,0 +1,21 @@
+# Tiltrotor VTOL mixer
+
+# Multirotor quad-x mixer
+
+R: 4x
+
+# Aileron mixer
+M: 1
+S: 1 0  10000  10000      0 -10000  10000
+
+# Elevator 1 mixer
+M: 1
+S: 1 1  -10000  -10000    0 -10000  10000
+
+# Elevator 2 mixer
+M: 1
+S: 1 1  10000  10000    0 -10000  10000
+
+# Rudder mixer
+M: 1
+S: 1 2  10000  10000      0 -10000  10000
