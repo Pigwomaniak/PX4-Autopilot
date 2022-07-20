@@ -46,7 +46,7 @@
 #include "estimator_interface.h"
 
 #include "EKFGSF_yaw.h"
-#include "baro_bias_estimator.hpp"
+#include "bias_estimator.hpp"
 
 #include <uORB/topics/estimator_aid_source_1d.h>
 #include <uORB/topics/estimator_aid_source_2d.h>
@@ -345,7 +345,7 @@ public:
 	// Returns true if the output of the yaw emergency estimator can be used for a reset
 	bool isYawEmergencyEstimateAvailable() const;
 
-	const BaroBiasEstimator::status &getBaroBiasEstimatorStatus() const { return _baro_b_est.getStatus(); }
+	const BiasEstimator::status &getBaroBiasEstimatorStatus() const { return _baro_b_est.getStatus(); }
 
 	const auto &aid_src_airspeed() const { return _aid_src_airspeed; }
 
@@ -412,6 +412,8 @@ private:
 	uint64_t _time_last_hgt_fuse{0};	///< time the last fusion of vertical position measurements was performed (uSec)
 	uint64_t _time_last_hor_vel_fuse{0};	///< time the last fusion of horizontal velocity measurements was performed (uSec)
 	uint64_t _time_last_ver_vel_fuse{0};	///< time the last fusion of verticalvelocity measurements was performed (uSec)
+	uint64_t _time_last_heading_fuse{0};
+
 	uint64_t _time_last_of_fuse{0};		///< time the last fusion of optical flow measurements were performed (uSec)
 	uint64_t _time_last_flow_terrain_fuse{0}; ///< time the last fusion of optical flow measurements for terrain estimation were performed (uSec)
 	uint64_t _time_last_beta_fuse{0};	///< time the last fusion of synthetic sideslip measurements were performed (uSec)
@@ -605,28 +607,10 @@ private:
 	// ekf sequential fusion of magnetometer measurements
 	void fuseMag(const Vector3f &mag);
 
-	// fuse the first euler angle from either a 321 or 312 rotation sequence as the observation (currently measures yaw using the magnetometer)
-	void fuseHeading(float measured_hdg = NAN, float obs_var = NAN);
-
-	// fuse the yaw angle defined as the first rotation in a 321 Tait-Bryan rotation sequence
-	// yaw : angle observation defined as the first rotation in a 321 Tait-Bryan rotation sequence (rad)
-	// yaw_variance : variance of the yaw angle observation (rad^2)
-	// zero_innovation : Fuse data with innovation set to zero
-	bool fuseYaw321(const float yaw, const float yaw_variance, bool zero_innovation = false);
-
-	// fuse the yaw angle defined as the first rotation in a 312 Tait-Bryan rotation sequence
-	// yaw : angle observation defined as the first rotation in a 312 Tait-Bryan rotation sequence (rad)
-	// yaw_variance : variance of the yaw angle observation (rad^2)
-	// zero_innovation : Fuse data with innovation set to zero
-	bool fuseYaw312(const float yaw, const float yaw_variance, bool zero_innovation = false);
-
-	// update quaternion states and covariances using an innovation, observation variance and Jacobian vector
+	// update quaternion states and covariances using a yaw innovation and yaw observation variance
 	// innovation : prediction - measurement
 	// variance : observaton variance
-	// gate_sigma : innovation consistency check gate size (Sigma)
-	// jacobian : 4x1 vector of partial derivatives of observation wrt each quaternion state
-	bool updateQuaternion(const float innovation, const float variance, const float gate_sigma,
-			      const Vector4f &yaw_jacobian);
+	bool fuseYaw(const float innovation, const float variance);
 
 	// fuse the yaw angle obtained from a dual antenna GPS unit
 	void fuseGpsYaw();
@@ -910,6 +894,8 @@ private:
 
 	void controlZeroVelocityUpdate();
 
+	void controlZeroInnovationHeadingUpdate();
+
 	// control fusion of auxiliary velocity observations
 	void controlAuxVelFusion();
 
@@ -1056,7 +1042,7 @@ private:
 	// yaw estimator instance
 	EKFGSF_yaw _yawEstimator{};
 
-	BaroBiasEstimator _baro_b_est{};
+	BiasEstimator _baro_b_est{};
 
 	int64_t _ekfgsf_yaw_reset_time{0};	///< timestamp of last emergency yaw reset (uSec)
 	uint8_t _ekfgsf_yaw_reset_count{0};	// number of times the yaw has been reset to the EKF-GSF estimate
